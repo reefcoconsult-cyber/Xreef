@@ -7,7 +7,7 @@ import Spline from '@splinetool/react-spline';
  */
 export default function Scene3D({ className = "h-[400px] sm:h-[500px]", showBorder = true }: { className?: string, showBorder?: boolean }) {
   return (
-    <div className={`w-full ${className} mb-8 overflow-hidden relative ${showBorder ? 'rounded-3xl border border-white/10 bg-gray-900/20 shadow-2xl' : ''}`}>
+    <div className={`w-full ${className} overflow-hidden relative ${showBorder ? 'rounded-3xl border border-white/10 bg-gray-900/20 shadow-2xl mb-8' : ''}`}>
       <div className="absolute inset-0 z-0">
         <Spline 
           scene="https://prod.spline.design/mkA-9g0HMsgzfcek/scene.splinecode" 
