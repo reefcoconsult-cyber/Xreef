@@ -3,9 +3,10 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Loader2, Image as ImageIcon, Upload, X, Download, Sparkles, ChevronDown, ChevronUp, Maximize2, Clock, Trash2, Crop, Zap, ImagePlus, Library, Edit2, Plus, Save, LayoutTemplate, Settings2, LogIn, LogOut, Mail, Lock, UserPlus, ArrowLeft, LifeBuoy, Wand2, Folder, Video } from "lucide-react";
 import ReactCrop, { type Crop as CropType } from 'react-image-crop';
 import 'react-image-crop/dist/ReactCrop.css';
-import { auth, db, signInWithGoogle, signInWithEmail, signUpWithEmail, logOut, handleFirestoreError, OperationType, getAccessToken, initAuth } from '../firebase';
+import { auth, db, storage, signInWithGoogle, signInWithEmail, signUpWithEmail, logOut, handleFirestoreError, OperationType, getAccessToken, initAuth } from '../firebase';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { collection, doc, setDoc, onSnapshot, query, orderBy, deleteDoc } from 'firebase/firestore';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { motion, AnimatePresence } from 'motion/react';
 import Scene3D from './Scene3D';
 
@@ -489,8 +490,20 @@ export default function ProjectWorkspace() {
     if (user) {
       for (const item of newItems) {
         try {
+          let finalUrl = item.url;
+          try {
+            const res = await fetch(item.url);
+            const blob = await res.blob();
+            const imageRef = ref(storage, `users/${user.uid}/projects/${projectId}/history/${item.id}.png`);
+            await uploadBytes(imageRef, blob);
+            finalUrl = await getDownloadURL(imageRef);
+          } catch (err) {
+            console.error("Failed to upload image to Firebase Storage", err);
+          }
+
           await setDoc(doc(db, `users/${user.uid}/projects/${projectId}/history`, item.id), {
             ...item,
+            url: finalUrl,
             userId: user.uid
           });
         } catch (err) {
@@ -729,9 +742,20 @@ export default function ProjectWorkspace() {
           const itemToUpdate = history.find(item => item.url === urlToUpscale);
           if (itemToUpdate) {
             try {
+              let finalUrl = data.output;
+              try {
+                const res = await fetch(data.output);
+                const blob = await res.blob();
+                const imageRef = ref(storage, `users/${user.uid}/projects/${projectId}/history/${itemToUpdate.id}_upscale_${Date.now()}.png`);
+                await uploadBytes(imageRef, blob);
+                finalUrl = await getDownloadURL(imageRef);
+              } catch (err) {
+                console.error("Failed to upload upscaled image to Firebase Storage", err);
+              }
+
               await setDoc(doc(db, `users/${user.uid}/projects/${projectId}/history`, itemToUpdate.id), {
                 ...itemToUpdate,
-                url: data.output
+                url: finalUrl
               });
             } catch (err) {
               handleFirestoreError(err, OperationType.UPDATE, `users/${user.uid}/projects/${projectId}/history`);
